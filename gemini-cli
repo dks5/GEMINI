@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Руководство по установке и настройке Gemini CLI</title>
+<!-- Подключение Tailwind CSS для стилизации -->
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* Начало блока пользовательских CSS-стилей */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #1a1a1a;
+  --bg-hover: #252525;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-glow: rgba(59, 130, 246, 0.5);
+  --success: #10b981;
+  --border: #262626;
+}
+/* Стили для полосы прокрутки */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #404040 #1a1a1a;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #404040;
+  border-radius: 4px;
+}
+/* Стили для тела документа и шрифтов */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+}
+code, pre {
+  font-family: 'JetBrains Mono', monospace;
+}
+/* Стили для навигации */
+.nav-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 300ms ease;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.nav-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+/* Стили для вкладок (табов) */
+.tab-btn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  transition: all 200ms ease;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+}
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: all 300ms ease;
+  transform: translateX(-50%);
+}
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.tab-btn.tab-active {
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.1);
+}
+.tab-btn.tab-active::after {
+  width: 100%;
+}
+/* Стили для карточек */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 300ms ease;
+}
+.card:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+/* Стили для блоков кода */
+.code-block {
+  position: relative;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+.code-block pre {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: hidden;
+  color: #e6edf3;
+  white-space: pre-wrap; /* Перенос строк */
+  word-wrap: break-word; /* Перенос длинных слов */
+}
+.code-block code {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+/* Подсветка синтаксиса в блоках кода */
+.code-block .comment { color: #8b949e; }
+.code-block .keyword { color: #ff7b72; }
+.code-block .string { color: #a5d6ff; }
+.code-block .function { color: #d2a8ff; }
+/* Кнопка копирования */
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  transition: all 200ms ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+.copy-btn.copied {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+/* Анимации появления элементов при загрузке страницы */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+}
+.fade-in:nth-child(1) { animation-delay: 0.1s; }
+.fade-in:nth-child(2) { animation-delay: 0.2s; }
+.fade-in:nth-child(3) { animation-delay: 0.3s; }
+/* Градиентный текст */
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+/* Светящиеся элементы */
+.glow {
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+/* Номера шагов */
+.step-number {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .tab-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  .card {
+    padding: 1rem;
+  }
+}
+/* Эффект свечения для заголовка Hero-секции */
+.hero-glow {
+  position: relative;
+}
+.hero-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0.3;
+  z-index: -1;
+  filter: blur(60px);
+}
+/* Конец блока пользовательских CSS-стилей */
+</style>
+</head>
+<body>
+<!-- Начало блока навигации -->
+<div class="sticky top-0 z-50 backdrop-blur-md bg-black/50 border-b border-white/10">
+  <header class="max-w-6xl mx-auto px-4 py-4 md:py-6">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <h1 class="text-2xl md:text-3xl font-bold">
+        <span class="gradient-text">Gemini CLI</span>
+      </h1>
+      <nav class="flex gap-2 md:gap-3">
+        <a href="#installation" class="nav-btn px-4 py-2 rounded-full text-sm font-medium">Установка</a>
+        <a href="#examples" class="nav-btn px-4 py-2 rounded-full text-sm font-medium">Примеры</a>
+        <a href="#conclusion" class="nav-btn px-4 py-2 rounded-full text-sm font-medium">Заключение</a>
+      </nav>
+    </div>
+  </header>
+</div>
+<!-- Конец блока навигации -->
+<!-- Начало основного контента -->
+<main class="max-w-6xl mx-auto px-4 py-12">
+  <!-- Начало секции "Hero" -->
+  <section class="text-center mb-16 hero-glow">
+    <h2 class="text-4xl md:text-6xl font-bold mb-6 fade-in">
+      Интерактивное Руководство по <span class="gradient-text">Gemini CLI</span>
+    </h2>
+    <p class="text-xl text-gray-400 fade-in">
+      Ваш персональный ИИ-агент на удаленном сервере Ubuntu
+    </p>
+    <div class="mt-8 fade-in">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span class="text-sm text-gray-400">Готов к установке</span>
+      </div>
+    </div>
+  </section>
+  <!-- Конец секции "Hero" -->
+  <!-- Начало секции "Установка" -->
+  <section id="installation" class="scroll-mt-24 mb-16">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold mb-3">🚀 Быстрая установка</h2>
+      <p class="text-gray-400">Четыре простых шага для запуска Gemini CLI на вашем сервере</p>
+    </div>
+    <div class="space-y-6">
+      <div class="card fade-in">
+        <div class="flex items-start gap-4">
+          <div class="step-number">1</div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-xl font-semibold mb-3">Проверка и установка Node.js и необходимых зависимостей</h3>
+            <p class="text-gray-400 mb-4">Убедитесь, что Node.js уже установлен. Если нет, выполните следующие команды.</p>
+            <div class="code-block fade-in">
+              <pre><code><span class="comment"># Проверка установленных версий Node.js и npm</span>
+node -v && npm -v</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                💡 Если вы видите номера версий, вы можете пропустить шаги по установке и сразу перейти к следующему этапу. В противном случае, продолжайте.
+              </p>
+            </div>
+            <div class="code-block fade-in">
+              <pre><code><span class="comment"># Обновление списка пакетов</span>
+sudo apt update
+<span class="comment"># Установка базовых инструментов (curl, gnupg) для Node.js</span>
+sudo apt install -y curl gnupg</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="code-block fade-in">
+              <pre><code><span class="comment"># Загрузка и запуск скрипта установки Node.js LTS</span>
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo bash -</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="code-block fade-in">
+              <pre><code><span class="comment"># Установка Node.js</span>
+sudo apt install -y nodejs</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                <strong class="font-bold">Внимание:</strong> Команда <code class="bg-transparent text-blue-300">sudo apt install -y nodejs</code> не устанавливает npm по умолчанию. Это связано с тем, что в репозиториях Debian и Ubuntu пакеты nodejs и npm считаются отдельными, хотя и тесно связаны.
+              </p>
+            </div>
+            <div class="code-block fade-in">
+              <pre><code><span class="comment"># Установка npm</span>
+sudo apt install -y npm</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <!-- Новый блок с инструкциями по обновлению Node.js -->
+            <h3 class="text-xl font-semibold mt-8 mb-3">Важный шаг: Обновление Node.js до последней версии</h3>
+            <p class="text-gray-400 mb-4">
+              Gemini CLI требует Node.js версии 20 или выше для корректной работы. Если ваша версия устарела, вы можете обновить ее с помощью следующих команд.
+            </p>
+            <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                💡 Эти команды автоматически обновят Node.js до последней LTS-версии из репозитория NodeSource, что обеспечит совместимость с Gemini CLI.
+              </p>
+            </div>
+            <div class="code-block fade-in">
+              <pre><code><span class="comment"># Обновление списка пакетов</span>
+sudo apt update
+<span class="comment"># Загрузка и запуск скрипта установки Node.js LTS</span>
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo bash -
+<span class="comment"># Обновление Node.js</span>
+sudo apt install -y nodejs</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <p class="text-gray-400 mt-4">
+              Теперь, когда у вас установлена правильная версия Node.js, вы можете перейти к следующему шагу.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="card fade-in">
+        <div class="flex items-start gap-4">
+          <div class="step-number">2</div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-xl font-semibold mb-3">Установка Gemini CLI</h3>
+            <p class="text-gray-400 mb-4">Установите CLI-инструмент через npm</p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Установка Gemini CLI глобально</span>
+npm install -g @google/gemini-cli</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card fade-in">
+        <div class="flex items-start gap-4">
+          <div class="step-number">3</div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-xl font-semibold mb-3">Настройка Google Cloud SDK</h3>
+            <p class="text-gray-400 mb-4">Установка Google Cloud CLI и авторизация в проекте</p>
+            <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                💡 Перед выполнением этого шага, вы можете проверить, установлен ли уже `gcloud`, с помощью команды <code class="bg-transparent text-blue-300">which gcloud</code>. Если вы видите путь, перейдите сразу к инициализации `gcloud init`.
+              </p>
+            </div>
+            <div class="code-block">
+              <pre><code><span class="comment"># 1. Установка Google Cloud SDK</span>
+<span class="comment"># Добавляем ключ аутентификации Google Cloud CLI</span>
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+<span class="comment"># Добавляем репозиторий Google Cloud SDK в список источников</span>
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+<span class="comment"># Обновляем список пакетов</span>
+sudo apt-get update
+<span class="comment"># Устанавливаем сам пакет Google Cloud SDK</span>
+sudo apt-get install google-cloud-sdk</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <p class="text-gray-400 mt-4 mb-4">
+                После установки `gcloud` вам нужно будет войти в свой аккаунт Google. `gcloud init` автоматически запустит процесс авторизации.
+                Это интерактивный процесс, который будет выполнен прямо в вашем терминале. Следуйте инструкциям ниже:
+            </p>
+            <ul class="list-disc list-inside space-y-2 text-gray-400 mb-4">
+                <li>В терминале появится ссылка на страницу авторизации Google. Скопируйте эту ссылку.</li>
+                <li>Откройте её в веб-браузере и войдите в свой аккаунт Google.</li>
+                <li>Предоставьте необходимые разрешения для Google Cloud SDK.</li>
+                <li>На странице появится код подтверждения. Скопируйте этот код.</li>
+                <li>Вернитесь в терминал и вставьте код, когда появится соответствующий запрос.</li>
+            </ul>
+            <div class="code-block">
+              <pre><code><span class="comment"># 2. Инициализация и авторизация</span>
+gcloud init
+<span class="comment"># Примечание: `gcloud init` запустит `gcloud auth login` автоматически.</span>
+<span class="comment"># Эту команду можно использовать отдельно для обновления токена.</span>
+gcloud auth login</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <h4 class="text-xl font-semibold mt-8 mb-3">Выбор проекта</h4>
+            <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                💡 Если у вас уже есть проект в Google Cloud, создавать новый не нужно.
+                Просто выберите его из списка и установите в качестве активного.
+              </p>
+            </div>
+            <div class="code-block">
+              <pre><code><span class="comment"># Проверка списка существующих проектов</span>
+gcloud projects list</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="code-block">
+              <pre><code><span class="comment"># Создание нового проекта. Придумайте свое уникальное имя, например, `gemini-cli-project`</span>
+gcloud projects create gemini-project-2025-09-03 --name="gemini-project-2025-09-03"</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="code-block">
+              <pre><code><span class="comment"># Установка проекта по умолчанию</span>
+<span class="comment"># Если вы создали новый проект, используйте его ID.</span>
+<span class="comment"># Если у вас уже был проект, используйте его ID из `gcloud projects list`.</span>
+gcloud config set project gemini-project-2025-09-03</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <h4 class="text-xl font-semibold mt-8 mb-3">Сделать переменную постоянной</h4>
+            <div class="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p class="text-sm text-green-400">
+                💡 Команда <code class="bg-transparent text-green-300">export</code> работает только до закрытия терминала.
+                Чтобы не вводить ее каждый раз, добавьте строку в файл конфигурации вашей оболочки.
+              </p>
+            </div>
+            <h4 class="text-xl font-semibold mt-8 mb-3">Как узнать, какую оболочку я использую?</h4>
+            <p class="text-gray-400 mb-4">
+              Если вы не уверены, какая у вас оболочка, используйте команду <code class="bg-transparent text-gray-300">echo $SHELL</code>. Она покажет путь к вашей основной оболочке, например <code class="bg-transparent text-gray-300">/bin/bash</code>. Это поможет вам выбрать правильный файл конфигурации (.bashrc, .zshrc и т.д.).
+            </p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Команда для проверки оболочки</span>
+echo $SHELL</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="code-block">
+              <pre><code><span class="comment"># Добавление переменной в .bashrc (для большинства пользователей Linux)</span>
+echo 'export GOOGLE_CLOUD_PROJECT="gemini-project-2025-09-03"' >> ~/.bashrc
+<span class="comment"># Примените изменения немедленно</span>
+source ~/.bashrc
+<span class="comment"># Для пользователей Zsh (например, macOS) используйте ~/.zshrc</span>
+<span class="comment"># echo 'export GOOGLE_CLOUD_PROJECT="gemini-project-2025-09-03"' >> ~/.zshrc</span>
+<span class="comment"># source ~/.zshrc</span></code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card fade-in">
+        <div class="flex items-start gap-4">
+          <div class="step-number">4</div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-xl font-semibold mb-3">Запуск Gemini CLI</h3>
+            <p class="text-gray-400 mb-4">Запустите Gemini CLI и завершите авторизацию</p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Запуск Gemini CLI</span>
+gemini</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                💡 После запуска `gemini` вам может потребоваться еще раз получить и ввести код авторизации.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Конец секции "Установка" -->
+  <!-- Начало секции "Примеры использования" -->
+  <section id="examples" class="scroll-mt-24 mb-16">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold mb-3">✨ Примеры использования</h2>
+      <p class="text-gray-400">Практические примеры для быстрого старта</p>
+    </div>
+    <div class="card">
+      <div class="border-b border-gray-800 -mx-6 px-6 mb-6">
+        <div class="flex flex-wrap gap-2" role="tablist">
+          <button data-tab="files" class="tab-btn tab-active" role="tab">📁 Работа с файлами</button>
+          <button data-tab="automation" class="tab-btn" role="tab">⚡ Автоматизация</button>
+          <button data-tab="analysis" class="tab-btn" role="tab">📊 Анализ данных</button>
+          <button data-tab="creative" class="tab-btn" role="tab">🎨 Креатив</button>
+        </div>
+      </div>
+      <div id="tab-content">
+        <div data-content="files" class="tab-panel">
+          <div class="space-y-4">
+            <h4 class="text-lg font-semibold flex items-center gap-2">
+              <span class="text-2xl">📸</span>
+              Умное переименование фотографий
+            </h4>
+            <p class="text-gray-400">Организуйте фотоархив по датам одной командой:</p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Запрос к Gemini для генерации bash-скрипта</span>
+gemini prompt "создай bash скрипт для переименования всех jpg файлов
+в формате YYYY-MM-DD_original-name.jpg используя дату создания"</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+              <p class="text-sm text-purple-400">
+                <strong>Результат:</strong> IMG_1234.jpg → 2024-03-15_IMG_1234.jpg
+              </p>
+            </div>
+          </div>
+        </div>
+        <div data-content="automation" class="tab-panel hidden">
+          <div class="space-y-4">
+            <h4 class="text-lg font-semibold flex items-center gap-2">
+              <span class="text-2xl">🔄</span>
+              Массовая обработка PDF
+            </h4>
+            <p class="text-gray-400">Сжимайте PDF файлы без потери качества:</p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Запрос к Gemini для генерации команды сжатия</span>
+gemini prompt "напиши команду ghostscript для сжатия PDF
+с сохранением качества для веб-публикации"</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p class="text-sm text-green-400">
+                <strong>Экономия:</strong> Размер файлов уменьшится на 60-80%
+              </p>
+            </div>
+          </div>
+        </div>
+        <div data-content="analysis" class="tab-panel hidden">
+          <div class="space-y-4">
+            <h4 class="text-lg font-semibold flex items-center gap-2">
+              <span class="text-2xl">📈</span>
+              Интеллектуальный анализ документов
+            </h4>
+            <p class="text-gray-400">Извлекайте ключевую информацию из PDF отчетов:</p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Сначала установите утилиту poppler-utils для извлечения текста из PDF</span>
+sudo apt install -y poppler-utils
+<span class="comment"># Затем анализируйте. Передайте текст из PDF в Gemini CLI через pipe ("|")</span>
+pdftotext report.pdf - | gemini prompt "выдели 5 главных инсайтов"</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p class="text-sm text-blue-400">
+                <strong>Совет:</strong> Можно анализировать логи, CSV файлы и любой текст
+              </p>
+            </div>
+          </div>
+        </div>
+        <div data-content="creative" class="tab-panel hidden">
+          <div class="space-y-4">
+            <h4 class="text-lg font-semibold flex items-center gap-2">
+              <span class="text-2xl">🌐</span>
+              Генерация веб-страниц
+            </h4>
+            <p class="text-gray-400">Создавайте готовые шаблоны за секунды:</p>
+            <div class="code-block">
+              <pre><code><span class="comment"># Запрос к Gemini для генерации HTML-страницы и перенаправление вывода в файл</span>
+gemini prompt "создай современный лендинг для фотографа
+с темной темой, анимациями и контактной формой" > portfolio.html</code></pre>
+              <button class="copy-btn">Копировать</button>
+            </div>
+            <div class="mt-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+              <p class="text-sm text-orange-400">
+                <strong>Бонус:</strong> Попросите добавить React, Tailwind или любой фреймворк
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-8 grid md:grid-cols-2 gap-4">
+      <div class="card bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20">
+        <h4 class="font-semibold mb-2 flex items-center gap-2">
+          <span class="text-xl">🤖</span> Системное администрирование
+        </h4>
+        <p class="text-sm text-gray-400">
+          "Напиши скрипт мониторинга нагрузки сервера с уведомлениями"
+        </p>
+      </div>
+      <div class="card bg-gradient-to-br from-green-500/10 to-teal-500/10 border-green-500/20">
+        <h4 class="font-semibold mb-2 flex items-center gap-2">
+          <span class="text-xl">🔐</span> Безопасность
+        </h4>
+        <p class="text-sm text-gray-400">
+          "Создай скрипт для аудита прав доступа к файлам"
+        </p>
+      </div>
+    </div>
+  </section>
+  <!-- Конец секции "Примеры использования" -->
+  <!-- Начало секции "Заключение" -->
+  <section id="conclusion" class="scroll-mt-24 text-center">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold mb-6">🎯 Ваш новый суперсилы</h2>
+      <div class="space-y-6 text-gray-300">
+        <p class="text-lg">
+          Gemini CLI превращает ваш терминал в интеллектуального помощника,
+          который понимает контекст и генерирует решения на лету.
+        </p>
+        <div class="grid md:grid-cols-3 gap-4 my-8">
+          <div class="card text-center">
+            <div class="text-3xl mb-2">⚡</div>
+            <h4 class="font-semibold mb-1">Скорость</h4>
+            <p class="text-sm text-gray-400">Решения за секунды</p>
+          </div>
+          <div class="card text-center">
+            <div class="text-3xl mb-2">🧠</div>
+            <h4 class="font-semibold mb-1">Интеллект</h4>
+            <p class="text-sm text-gray-400">Понимает контекст</p>
+          </div>
+          <div class="card text-center">
+            <div class="text-3xl mb-2">🔧</div>
+            <h4 class="font-semibold mb-1">Гибкость</h4>
+            <p class="text-sm text-gray-400">Любые задачи</p>
+          </div>
+        </div>
+        <p class="text-xl font-semibold gradient-text">
+          Экспериментируйте и автоматизируйте рутину!
+        </p>
+      </div>
+      <div class="mt-10">
+        <a href="https://t.me/your_channel"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-full hover:shadow-lg hover:shadow-purple-500/25 transform hover:-translate-y-1 transition-all duration-300">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.56c-.21 2.27-1.13 7.75-1.6 10.29-.2 1.08-.59 1.44-.97 1.47-.82.07-1.45-.54-2.24-.97-1.24-.77-1.94-1.25-3.14-2-1.39-.87-.49-1.34.3-2.12.21-.2 3.82-3.5 3.89-3.8.01-.04.01-.19-.07-.27s-.21-.05-.3-.03c-.13.02-2.16 1.37-6.09 4.02-.58.4-1.1.59-1.57.58-.52-.01-1.51-.29-2.25-.53-.9-.29-1.62-.45-1.56-.95.03-.26.39-.53 1.07-.8 4.19-1.82 6.99-3.03 8.4-3.61 4-1.66 4.83-1.95 5.37-1.96.12 0 .38.03.55.18.14.12.18.29.2.43-.01.06.01.24 0 .38z"/>
+          </svg>
+          Подписаться на канал
+        </a>
+      </div>
+      <p class="mt-12 text-lg italic text-gray-500">
+        Какую задачу вы автоматизируете первой? 🚀
+      </p>
+    </div>
+  </section>
+  <!-- Конец секции "Заключение" -->
+</main>
+<!-- Начало блока JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Утилита для копирования в буфер обмена
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        return true;
+      } catch {
+        return false;
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+  };
+  // Обработчик клика для кнопок копирования
+  document.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('copy-btn')) {
+      const btn = e.target;
+      const code = btn.parentElement.querySelector('code').textContent;
+      if (await copyToClipboard(code)) {
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Скопировано';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      }
+    }
+  });
+  // Система вкладок для раздела примеров
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+  tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const targetTab = button.dataset.tab;
+      // Обновляем кнопки
+      tabButtons.forEach(btn => {
+        btn.classList.toggle('tab-active', btn.dataset.tab === targetTab);
+      });
+      // Обновляем панели
+      tabPanels.forEach(panel => {
+        panel.classList.toggle('hidden', panel.dataset.content !== targetTab);
+      });
+    });
+  });
+  // Плавная прокрутка и подсветка активной навигационной ссылки
+  const navLinks = document.querySelectorAll('.nav-btn');
+  const sections = document.querySelectorAll('section[id]');
+  // Обработчик клика для плавной прокрутки
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = link.getAttribute('href').substring(1);
+      const targetSection = document.getElementById(targetId);
+      if (targetSection) {
+        const offset = 100;
+        const top = targetSection.offsetTop - offset;
+        window.scrollTo({
+          top: top,
+          behavior: 'smooth'
+        });
+      }
+    });
+  });
+  // Отслеживание скролла для подсветки навигации
+  const observerOptions = {
+    rootMargin: '-20% 0px -70% 0px'
+  };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(link => {
+          link.classList.toggle('active',
+            link.getAttribute('href') === `#${id}`);
+        });
+      }
+    });
+  }, observerOptions);
+  sections.forEach(section => observer.observe(section));
+  // Анимация элементов при скролле
+  const animateOnScroll = () => {
+    const elements = document.querySelectorAll('.fade-in');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    elements.forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+  };
+  animateOnScroll();
+  // Эффект параллакса для Hero-секции
+  let ticking = false;
+  const heroGlow = document.querySelector('.hero-glow');
+  const updateParallax = () => {
+    const scrolled = window.pageYOffset;
+    const rate = scrolled * -0.5;
+    if (heroGlow) {
+      heroGlow.style.transform = `translateY(${rate}px)`;
+    }
+    ticking = false;
+  };
+  const requestTick = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(updateParallax);
+      ticking = true;
+    }
+  };
+  window.addEventListener('scroll', requestTick);
+  // Эффект наведения на карточки (неактивен в текущей версии)
+  const cards = document.querySelectorAll('.card');
+  cards.forEach(card => {
+    card.addEventListener('mouseenter', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    });
+  });
+  // Эффект печатания для заголовка
+  const typeWriter = (element, text, speed = 50) => {
+    let i = 0;
+    element.textContent = '';
+    const type = () => {
+      if (i < text.length) {
+        element.textContent += text.charAt(i);
+        i++;
+        setTimeout(type, speed);
+      }
+    };
+    type();
+  };
+  // Активируем эффект печатания при загрузке
+  const heroTitle = document.querySelector('.hero-glow h2');
+  if (heroTitle) {
+    const originalText = heroTitle.textContent;
+    setTimeout(() => {
+      typeWriter(heroTitle, originalText, 30);
+    }, 500);
+  }
+  // Эффект подсветки блоков кода при наведении
+  const codeBlocks = document.querySelectorAll('.code-block');
+  codeBlocks.forEach(block => {
+    block.addEventListener('mouseenter', () => {
+      block.style.boxShadow = '0 0 30px rgba(59, 130, 246, 0.3)';
+    });
+    block.addEventListener('mouseleave', () => {
+      block.style.boxShadow = 'none';
+    });
+  });
+  // Клавиатурная навигация для вкладок
+  tabButtons.forEach((button, index) => {
+    button.addEventListener('keydown', (e) => {
+      let newIndex;
+      switch(e.key) {
+        case 'ArrowRight':
+          newIndex = (index + 1) % tabButtons.length;
+          break;
+        case 'ArrowLeft':
+          newIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+          break;
+        case 'Home':
+          newIndex = 0;
+          break;
+        case 'End':
+          newIndex = tabButtons.length - 1;
+          break;
+        default:
+          return;
+      }
+      tabButtons[newIndex].focus();
+      tabButtons[newIndex].click();
+      e.preventDefault();
+    });
+  });
+});
+</script>
+<!-- Конец блока JavaScript -->
+</body>
+</html>
