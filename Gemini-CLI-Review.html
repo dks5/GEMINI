@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обзор Gemini CLI: Уровни доступа и Лимиты</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #383838;
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .toggle-btn {
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.active {
+            background-color: #4F46E5;
+            color: #FFFFFF;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .card-inner {
+            background-color: #FFFFFF;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-inner:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.3), 0 12px 20px -10px rgba(0, 0, 0, 0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #4F46E5, #818CF8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        .nav-button:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        /* Исправление: Убираем hover для мобильной версии и делаем active стиль контрастным */
+        .nav-button.active {
+            background-color: #4F46E5;
+            color: #FFFFFF;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+        }
+        code {
+            background-color: #E5E7EB;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #4F46E5;
+            font-weight: 500;
+        }
+        .highlight {
+            color: #4F46E5;
+            font-weight: 600;
+        }
+        .nav-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .nav-button-wrapper {
+            flex: 1 1 auto;
+            max-width: 200px;
+        }
+        .nested-tab-content {
+            display: none;
+        }
+        .nested-tab-content.active {
+            display: block;
+        }
+        .nested-tab-button {
+            transition: all 0.3s ease;
+        }
+        .nested-tab-button.active {
+            background-color: #4F46E5;
+            color: #FFFFFF;
+        }
+        .nested-tab-button:hover {
+            background-color: #E5E7EB; /* Более темный hover, чтобы избежать "сливания" */
+            color: #383838;
+        }
+        
+        /* Исправленная реализация градиентной рамки с помощью вложенных div */
+        .gradient-border-outer {
+            background: linear-gradient(to right, #A78BFA, #2DD4BF);
+            border-radius: 1.5rem;
+            padding: 2px; /* Толщина "рамки" */
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.2), 0 8px 16px -8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .gradient-border-outer:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.3), 0 12px 20px -10px rgba(0, 0, 0, 0.3);
+        }
+        .gradient-border-inner {
+            background-color: white;
+            border-radius: calc(1.5rem - 2px); /* Радиус с учетом толщины рамки */
+        }
+        .sub-card {
+            background: linear-gradient(to right, #A78BFA, #2DD4BF);
+            padding: 2px;
+            border-radius: 0.75rem;
+        }
+        .sub-card-inner {
+            background-color: white;
+            border-radius: calc(0.75rem - 2px);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-center items-center">
+            <div class="nav-container">
+                <div class="nav-button-wrapper">
+                    <button data-target="what-is" class="nav-button py-2 px-4 w-full rounded-lg text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500 active">Обзор</button>
+                </div>
+                <div class="nav-button-wrapper">
+                    <button data-target="commands" class="nav-button py-2 px-4 w-full rounded-lg text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500">Команды</button>
+                </div>
+                <div class="nav-button-wrapper">
+                    <button data-target="tools" class="nav-button py-2 px-4 w-full rounded-lg text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500">Инструменты</button>
+                </div>
+                <div class="nav-button-wrapper">
+                    <button data-target="context" class="nav-button py-2 px-4 w-full rounded-lg text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500">Контекст</button>
+                </div>
+                <div class="nav-button-wrapper">
+                    <button data-target="limits" class="nav-button py-2 px-4 w-full rounded-lg text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500">Лимиты</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+
+        <header class="text-center mb-10 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-2">Обзор <span class="gradient-text">Gemini CLI</span></h1>
+            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">Интерактивный справочник по уровням доступа и лимитам использования.</p>
+        </header>
+
+        <main>
+            <section id="what-is" class="content-section active">
+                 <div class="max-w-4xl mx-auto gradient-border-outer">
+                    <div class="gradient-border-inner p-8">
+                        <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 mb-4 text-center">Что такое Gemini CLI?</h2>
+                        <p class="text-base md:text-lg text-gray-600 text-center leading-relaxed">
+                            Gemini CLI (Command-Line Interface) — это инструмент для разработчиков, позволяющий взаимодействовать с моделями искусственного интеллекта Google Gemini прямо из терминала или командной строки. Он идеально подходит для автоматизации задач, интеграции в рабочие процессы разработки и быстрого тестирования возможностей моделей без необходимости создавать графический интерфейс.
+                        </p>
+                    </div>
+                 </div>
+            </section>
+            
+            <section id="commands" class="content-section">
+                 <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">2.1. Основные команды и режимы взаимодействия</h2>
+                 <div class="text-center mb-8">
+                    <div class="inline-flex rounded-lg shadow-sm mt-4" role="group">
+                        <button type="button" id="commands-tab-btn" class="nested-tab-button py-2 px-6 text-sm font-medium text-gray-900 bg-white rounded-l-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500 active">
+                            Режимы
+                        </button>
+                        <button type="button" id="slash-commands-tab-btn" class="nested-tab-button py-2 px-6 text-sm font-medium text-gray-900 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500">
+                            Слеш-команды
+                        </button>
+                    </div>
+                 </div>
+
+                 <div id="commands-tab-content" class="nested-tab-content active">
+                     <div class="gradient-border-outer">
+                        <div class="gradient-border-inner p-6 md:col-span-2">
+                            <p class="text-base text-gray-600 leading-relaxed">Gemini CLI предоставляет несколько режимов взаимодействия для оптимизации рабочего процесса. <span class="highlight">Интерактивный режим (REPL)</span> запускается командой <code>gemini</code> и позволяет вести диалог с агентом, сохраняя контекст беседы. Для выполнения однократных запросов без входа в интерактивную сессию используется <span class="highlight">неинтерактивный режим</span> с флагом <code>-p</code> (например, <code>gemini -p "Summarize file. @./summary.txt"</code>). Кроме того, инструмент поддерживает <span class="highlight">пайпинг</span>, что позволяет направлять вывод других команд непосредственно в Gemini CLI (например, <code>echo "Count to 10" | gemini</code>).</p>
+                        </div>
+                    </div>
+                 </div>
+
+                 <div id="slash-commands-tab-content" class="nested-tab-content">
+                    <div class="gradient-border-outer">
+                        <div class="gradient-border-inner p-6 md:col-span-2">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">Слеш-команды</h3>
+                            <p class="text-base text-gray-600 leading-relaxed">Внутри интерактивной сессии доступны различные слеш-команды (<code>/</code>) для управления агентом:</p>
+                            <ul class="list-disc list-inside mt-4 space-y-2">
+                                <li><code><span class="highlight">/help</span></code> — показывает список доступных команд и их описание.</li>
+                                <li><code><span class="highlight">/chat</span></code> — переключает в режим чата.</li>
+                                <li><code><span class="highlight">/memory</span></code> — позволяет управлять контекстом сессии.</li>
+                                <li><code><span class="highlight">/stats</span></code> — отображает статистику использования, включая количество запросов.</li>
+                                <li><code><span class="highlight">/quit</span></code> — завершает работу инструмента.</li>
+                            </ul>
+                        </div>
+                    </div>
+                 </div>
+            </section>
+            
+            <section id="tools" class="content-section">
+                 <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">2.2. Встроенные инструменты: Ядро агентности</h2>
+                 <div class="gradient-border-outer">
+                    <div class="gradient-border-inner p-6">
+                        <p class="text-base text-gray-600 leading-relaxed">Ключевая возможность Gemini CLI — это использование встроенных инструментов, которые позволяют агенту взаимодействовать с локальным окружением и внешними сервисами. Эти инструменты являются основой архитектуры <span class="highlight">ReAct</span> и позволяют выполнять задачи, выходящие за рамки простой генерации текста.
+                        <br><br>
+                        <strong class="text-gray-800">Управление файловой системой:</strong> Агент может читать (<code><span class="highlight">ReadFile</span></code>, <code><span class="highlight">ReadManyFiles</span></code>) и записывать (<code><span class="highlight">WriteFile</span></code>) файлы, а также находить их по шаблону (<code><span class="highlight">FindFiles</span></code> или <code><span class="highlight">glob</span></code>). Примером практического использования является генерация кода и автоматическое создание новых файлов проекта, таких как <code><span class="highlight">app.py</span></code> или <code><span class="highlight">requirements.txt</span></code>.
+                        <br><br>
+                        <strong class="text-gray-800">Системные команды:</strong> Инструмент <code><span class="highlight">Shell</span></code> позволяет выполнять команды оболочки. Это критически важная функция для автоматизации, позволяющая агенту выполнять такие действия, как создание директорий (<code><span class="highlight">mkdir</span></code>), установка пакетов (<code><span class="highlight">pip install</span></code> или <code><span class="highlight">npm install</span></code>) или запуск тестов. Пользователь также может вручную переключиться в режим оболочки, набрав <code><span class="highlight">!</span></code>.
+                        <br><br>
+                        <strong class="text-gray-800">Работа с сетью:</strong> Инструменты <code><span class="highlight">WebFetch</span></code> и <code><span class="highlight">Google Search</span></code> позволяют модели получать актуальную информацию из интернета. Это помогает «заземлять» ответы на реальных данных, снижая вероятность галлюцинаций и делая ответы более точными и полезными.
+                        <br><br>
+                        Поскольку некоторые инструменты могут выполнять потенциально деструктивные действия (например, запись файлов или выполнение команд оболочки), в архитектуру Gemini CLI заложен фундаментальный принцип безопасности, известный как <span class="highlight">«Human in the Loop» (HiTL)</span>. Перед выполнением таких операций, как <code><span class="highlight">mkdir</span></code> или <code><span class="highlight">WriteFile</span></code>, агент явно запрашивает у пользователя разрешение. Этот механизм обеспечивает прозрачность и контроль, позволяя разработчику сохранять полный контроль над своим окружением, даже когда задачи автоматизированы. Это критически важный аспект, который укрепляет доверие к инструменту и делает его безопасным для использования в критических средах разработки.
+                    </div>
+                 </div>
+            </section>
+            
+            <section id="context" class="content-section">
+                 <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">2.3. Управление контекстом и интеграция с IDE</h2>
+                 <div class="gradient-border-outer">
+                    <div class="gradient-border-inner p-6">
+                        <p class="text-base text-gray-600 leading-relaxed">Для эффективной работы в контексте проекта Gemini CLI использует специальные файлы <span class="highlight">GEMINI.md</span>. Эти файлы содержат инструкции для модели (например, «Весь код на Python должен соответствовать PEP 8» или «Используй отступы в 2 пробела») и могут быть расположены на разных уровнях иерархии проекта. Агент автоматически объединяет контекст из глобального файла (<code><span class="highlight">~/.gemini/GEMINI.md</span></code>) и локальных файлов, находящихся в текущей директории и ее родительских папках, что позволяет точно настроить поведение модели для каждого проекта.
+                        <br><br>
+                        Кроме того, инструмент поддерживает <strong class="text-gray-800">чекпоинтинг</strong>, позволяя сохранять и восстанавливать сложные сеансы, а также глубоко интегрируется с популярными IDE, такими как <strong class="text-gray-800">VS Code</strong> и <strong class="text-gray-800">Zed</strong>. Такая интеграция позволяет агенту получать контекст из редактора, включая открытые файлы и выделенный текст, и визуализировать предлагаемые изменения в виде <strong class="text-gray-800">diff-просмотра</strong>, что упрощает их анализ и утверждение.
+                    </div>
+                 </div>
+            </section>
+
+            <section id="limits" class="content-section">
+                <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">4. Аутентификация, лимиты и зависимость от тира</h2>
+                <div class="text-center mb-8">
+                    <p class="text-base md:text-lg text-gray-600">Выберите тип лимитов для просмотра информации.</p>
+                    <div class="inline-flex rounded-lg shadow-sm mt-4" role="group">
+                        <button type="button" id="daily-limits-btn" class="nested-tab-button py-2 px-6 text-sm font-medium text-gray-900 bg-white rounded-l-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500 active">
+                            Дневные Лимиты
+                        </button>
+                        <button type="button" id="auth-methods-btn" class="nested-tab-button py-2 px-6 text-sm font-medium text-gray-900 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-indigo-500">
+                           Методы аутентификации
+                        </button>
+                    </div>
+                </div>
+
+                <div id="daily-limits-content" class="nested-tab-content active">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="gradient-border-outer">
+                            <div class="gradient-border-inner p-6 flex flex-col">
+                                <h3 class="text-xl font-semibold text-indigo-600 mb-2">Бесплатный (Flash)</h3>
+                                <p class="text-gray-500 text-sm mb-4">
+                                    <span class="font-semibold text-gray-700">Тип аутентификации:</span> OAuth</p>
+                                <p class="text-gray-500 text-sm mb-4">
+                                    <span class="font-semibold text-gray-700">Биллинг:</span> Не требуется</p>
+                                <div class="mt-auto space-y-2">
+                                    <p class="text-base text-gray-800">
+                                        <span class="font-semibold">Лимит запросов:</span> 60/мин</p>
+                                    <p class="text-base text-gray-800">
+                                        <span class="font-semibold">Лимит токенов:</span> 8 192</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gradient-border-outer">
+                            <div class="gradient-border-inner p-6 flex flex-col">
+                                <h3 class="text-xl font-semibold text-indigo-600 mb-2">Pro</h3>
+                                 <p class="text-gray-500 text-sm mb-4">
+                                    <span class="font-semibold text-gray-700">Тип аутентификации:</span> Ключ Gemini API</p>
+                                <p class="text-gray-500 text-sm mb-4">
+                                    <span class="font-semibold text-gray-700">Биллинг:</span> Бесплатная квота (биллинг не требуется)</p>
+                                <div class="mt-auto space-y-2">
+                                    <p class="text-base text-gray-800">
+                                        <span class="font-semibold">Лимит запросов:</span> 1500/мин</p>
+                                    <p class="text-base text-gray-800">
+                                        <span class="font-semibold">Лимит токенов:</span> 32 768</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gradient-border-outer">
+                            <div class="gradient-border-inner p-6 flex flex-col">
+                                <h3 class="text-xl font-semibold text-indigo-600 mb-2">Ultra</h3>
+                                 <p class="text-gray-500 text-sm mb-4">
+                                    <span class="font-semibold text-gray-700">Тип аутентификации:</span> Vertex AI</p>
+                                <p class="text-gray-500 text-sm mb-4">
+                                    <span class="font-semibold text-gray-700">Биллинг:</span> Требуется</p>
+                                <div class="mt-auto space-y-2">
+                                   <p class="text-base text-gray-800">
+                                        <span class="font-semibold">Лимит запросов:</span> 3000+/мин</p>
+                                   <p class="text-base text-gray-800">
+                                        <span class="font-semibold">Лимит токенов:</span> 128 000+</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="auth-section" class="mt-12 md:mt-20">
+                        <div class="max-w-4xl mx-auto sub-card">
+                            <div class="sub-card-inner p-8">
+                                <h2 class="text-2xl md:text-3xl font-semibold text-indigo-800 mb-4 text-center">Ключевой вывод: зависят ли лимиты от уровня доступа?</h2>
+                                <p class="text-base md:text-lg text-indigo-700 text-center leading-relaxed">
+                                    Да, и эта зависимость прямая.
+                                </p>
+                                <div class="mt-8 space-y-6 md:space-y-4 max-w-2xl mx-auto">
+                                    <div class="sub-card">
+                                        <div class="sub-card-inner p-4">
+                                            <p class="text-base text-indigo-800">
+                                                <strong class="font-semibold">OAuth:</strong> Бесплатный доступ для индивидуальных разработчиков с базовыми лимитами.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="sub-card">
+                                        <div class="sub-card-inner p-4">
+                                            <p class="text-base text-indigo-800">
+                                                <strong class="font-semibold">Ключ Gemini API:</strong> Бесплатная квота с повышенными лимитами для программного доступа, при этом в рамках бесплатной квоты вам не потребуется биллинг.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="sub-card">
+                                        <div class="sub-card-inner p-4">
+                                            <p class="text-base text-indigo-800">
+                                                <strong class="font-semibold">Vertex AI:</strong> Корпоративное решение с самыми высокими лимитами, где биллинг обязателен.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="auth-methods-content" class="nested-tab-content">
+                    <h3 class="text-xl md:text-2xl font-semibold text-gray-800 mb-4 text-center">Обзор методов аутентификации</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="gradient-border-outer">
+                            <div class="gradient-border-inner p-6 flex flex-col">
+                                <h3 class="text-xl font-semibold text-indigo-600 mb-2">OAuth-вход</h3>
+                                <p class="text-gray-500 text-sm mb-4 italic">Самый простой способ</p>
+                                <div class="mt-auto">
+                                    <p class="text-base text-gray-600 leading-relaxed">Вход через личный аккаунт Google. Не требует управления ключами API и привязан к бесплатной лицензии Gemini Code Assist для частных лиц.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gradient-border-outer">
+                            <div class="gradient-border-inner p-6 flex flex-col">
+                                <h3 class="text-xl font-semibold text-indigo-600 mb-2">Ключ Gemini API</h3>
+                                <p class="text-gray-500 text-sm mb-4 italic">Для программного доступа</p>
+                                <div class="mt-auto">
+                                    <p class="text-base text-gray-600 leading-relaxed">Получается бесплатно в Google AI Studio и устанавливается как переменная окружения <code>GEMINI_API_KEY</code> или в файл <code>.env</code>. Удобен для проектов, где требуется программный доступ без биллинга.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gradient-border-outer">
+                            <div class="gradient-border-inner p-6 flex flex-col">
+                                <h3 class="text-xl font-semibold text-indigo-600 mb-2">Vertex AI</h3>
+                                <p class="text-gray-500 text-sm mb-4 italic">Корпоративный подход</p>
+                                <div class="mt-auto">
+                                   <p class="text-base text-gray-600 leading-relaxed">Интегрирован с Google Cloud Platform. Обеспечивает высокий уровень безопасности, централизованный биллинг и масштабирование, идеально подходит для корпоративных команд и продакшен-нагрузок.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-16 text-gray-500 text-sm">
+            <p>&copy; 2024 Интерактивный Анализ Gemini. Информация основана на общедоступных данных.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = document.querySelectorAll('.nav-button');
+            const sections = document.querySelectorAll('.content-section');
+            const dailyLimitsBtn = document.getElementById('daily-limits-btn');
+            const authMethodsBtn = document.getElementById('auth-methods-btn');
+            const dailyLimitsContent = document.getElementById('daily-limits-content');
+            const authMethodsContent = document.getElementById('auth-methods-content');
+            const commandsTabBtn = document.getElementById('commands-tab-btn');
+            const slashCommandsTabBtn = document.getElementById('slash-commands-tab-btn');
+            const commandsTabContent = document.getElementById('commands-tab-content');
+            const slashCommandsTabContent = document.getElementById('slash-commands-tab-content');
+
+            function showSection(targetId) {
+                sections.forEach(section => {
+                    if (section.id === targetId) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+                navButtons.forEach(button => {
+                    if (button.dataset.target === targetId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+            }
+
+            function showLimitsTab(tabId) {
+                const contents = [dailyLimitsContent, authMethodsContent];
+                const buttons = [dailyLimitsBtn, authMethodsBtn];
+
+                contents.forEach(content => content.classList.remove('active'));
+                buttons.forEach(button => button.classList.remove('active'));
+
+                if (tabId === 'daily-limits-content') {
+                    dailyLimitsContent.classList.add('active');
+                    dailyLimitsBtn.classList.add('active');
+                } else if (tabId === 'auth-methods-content') {
+                    authMethodsContent.classList.add('active');
+                    authMethodsBtn.classList.add('active');
+                }
+            }
+            
+            function showNestedTab(tabId) {
+                const contents = document.querySelectorAll('#commands .nested-tab-content');
+                const buttons = document.querySelectorAll('#commands .nested-tab-button');
+                
+                contents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+                
+                buttons.forEach(button => {
+                    button.classList.remove('active');
+                });
+                
+                if (tabId === 'commands-tab-content') {
+                    commandsTabBtn.classList.add('active');
+                } else if (tabId === 'slash-commands-tab-content') {
+                    slashCommandsTabBtn.classList.add('active');
+                }
+            }
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetId = e.target.dataset.target;
+                    showSection(targetId);
+                });
+            });
+
+            dailyLimitsBtn.addEventListener('click', () => showLimitsTab('daily-limits-content'));
+            authMethodsBtn.addEventListener('click', () => showLimitsTab('auth-methods-content'));
+            
+            commandsTabBtn.addEventListener('click', () => showNestedTab('commands-tab-content'));
+            slashCommandsTabBtn.addEventListener('click', () => showNestedTab('slash-commands-tab-content'));
+            
+            showSection('what-is');
+            showLimitsTab('daily-limits-content');
+        });
+    </script>
+</body>
+</html>
